@@ -8,6 +8,7 @@ scalaVersion := "2.10.1"
 
 libraryDependencies ++= Seq(
   "net.java.dev.jna" % "jna" % "3.5.1",
+  "org.scala-lang" % "scala-reflect" % "2.10.1", // TODO: Use scalaVersion above.
    "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
 )
 

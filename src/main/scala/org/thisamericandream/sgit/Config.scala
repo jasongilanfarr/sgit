@@ -41,7 +41,7 @@ object Config {
   private[sgit] def apply(ptr: Pointer) = new Config(ptr)
 
   def global = findGlobal
-  
+
   def findGlobal(): Try[String] = {
     val out = new Memory(1024)
     Git2.config_find_global[Int](out, out.size()) match {
@@ -49,19 +49,19 @@ object Config {
       case x => Git2.exception(x)
     }
   }
-  
+
   def system = findSystem
-  
-  def findSystem() : Try[String] = {
+
+  def findSystem(): Try[String] = {
     val out = new Memory(1024)
     Git2.config_find_system[Int](out, out.size()) match {
       case 0 => Success(out.getString(0))
       case x => Git2.exception(x)
     }
   }
-  
+
   def xdg = findXdg
-  
+
   def findXdg(): Try[String] = {
     val out = new Memory(1024)
     Git2.config_find_xdg[Int](out, out.size()) match {
@@ -69,6 +69,5 @@ object Config {
       case x => Git2.exception(x)
     }
   }
-  
-  
+
 }

@@ -59,8 +59,8 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.repository_path[String](this)
   }
 
-  def workDir(): String = {
-    Git2.repository_workdir[String](this)
+  def workDir(): Option[String] = {
+    Option(Git2.repository_workdir[String](this))
   }
 
   def workDir_=(path: String): Try[Unit] = {
@@ -114,8 +114,8 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
       case x => Git2.exception(x)
     }
   }
-  
-  def find(refName: String) : Try[Reference] = {
+
+  def find(refName: String): Try[Reference] = {
     val ptr = new PointerByReference
     Git2.reference_lookup[Int](ptr, this, refName) match {
       case 0 => Success(new Reference(ptr.getValue))
@@ -126,7 +126,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   protected override def freeObject() {
     Git2.repository_free[Unit](this)
   }
-  
+
   override def equals(other: Any) = other match {
     case other: Repository => ptr == other.ptr
     case p: Pointer => ptr == p

@@ -1,30 +1,32 @@
 package org.thisamericandream.sgit
 
+import language.implicitConversions
 import com.sun.jna.Pointer
 import com.sun.jna.PointerType
 import com.sun.jna.Memory
 import com.sun.jna.ptr.PointerByReference
 import scala.util.Try
 import scala.util.Success
+import com.sun.jna.Native
 
-class Oid(val ptr: Pointer) extends PointerType(ptr) with Freeable with Ordered[Oid] {
+class Oid(val ptr: Pointer) extends PointerType(ptr) with Ordered[Oid] {
   def this() = this(Pointer.NULL)
 
   def fmt(): String = {
-    val strPtr = Git2.oid_allocfmt[Pointer](this)
-    val ret = strPtr.getString(0)
-    //Git2._free(strPtr) - git__free doesn't exist?
-    ret
+    val buf = new Memory(41)
+    Git2.oid_fmt[Unit](buf, this)
+    buf.getString(0, false)
   }
 
-  
-  protected override def freeObject() {
-    // TODO: Free the ptr
+  def isZero: Boolean = {
+    Git2.oid_iszero[Int](this) == 1
   }
   
   override def equals(that: Any) = that match {
-    case t if t.isInstanceOf[Oid] =>
+    case t:Oid =>
       Git2.oid_equal[Int](this, that) == 1
+    case t:String =>
+      Git2.oid_streq[Int](this, t) == 1
     case _ => false
   }
 
@@ -51,4 +53,6 @@ object Oid {
       case x => Git2.exception(x)
     } 
   }
+  
+  implicit def fromStr(str: String) : Oid = fromString(str).get
 }

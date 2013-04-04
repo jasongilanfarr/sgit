@@ -12,19 +12,13 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import scala.util.Failure
+import org.scalatest.BeforeAndAfterAll
 
-class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfter {
-  var tempDir: Path = null
-  var baseRepoDir: String = null
+class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
+  val tempDir = Files.createTempDirectory("sgit")
   var toFree: List[Freeable] = Nil
 
-  before {
-    tempDir = Files.createTempDirectory("sgit")
-    baseRepoDir = Files.createTempDirectory(tempDir, "baseRepo").toString
-    Repository.init(baseRepoDir.toString) should be('success)
-  }
-
-  after {
+  override def afterAll {
     Files.walkFileTree(tempDir, new SimpleFileVisitor[Path]() {
       override def visitFile(file: Path, attr: BasicFileAttributes): FileVisitResult = {
         Files.delete(file)
@@ -38,9 +32,10 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfter {
     toFree.foreach(_.free)
   }
 
-  def withRepo(name: String)(testCode: Repository => Any) {
+  def withRepo(name: String, bare: Boolean = false)(testCode: Repository => Any) {
+    require(tempDir != null)
     val subDir = Files.createTempDirectory(tempDir, "newRepos").toRealPath()
-    val repo = Repository.init(subDir.toString).get
+    val repo = Repository.init(subDir.toString, bare).get
     toFree ::= repo
     testCode(repo)
   }
@@ -65,28 +60,28 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfter {
       new File(r.get.path).toPath.toRealPath() should equal(subDir)
       r.get.workDir should be(None)
     }
-    "be able to open an existing repo" in {
-      val r = Repository(baseRepoDir)
+    "be able to open an existing repo" in withRepo("existing") { repo =>
+      val r = Repository(repo.workDir.get)
       r should be('success)
       toFree ::= r.get
     }
-    "be freeable" in {
-      Repository(baseRepoDir).get.free
+    "be freeable" in withRepo("freeable") { repo =>
+      Repository(repo.workDir.get).get.free
     }
-    "New Repositories" should {
-      "have an orphaned head" in withRepo("orphanedHead") { repo =>
+    "New Repositories" should withRepo("newRepos") { repo =>
+      "have an orphaned head" in {
         repo.isHeadOrphan.get should be(true)
       }
-      "be empty" in withRepo("empty") { repo =>
+      "be empty" in {
         repo.isEmpty.get should be(true)
       }
-      "not be bare" in withRepo("notBare") { repo =>
+      "not be bare" in {
         repo.isBare.get should not be (true)
       }
-      "not have a detached head" in withRepo("detachedHead") { repo =>
+      "not have a detached head" in {
         repo.isHeadDetached.get should be(false)
       }
-      "have an index" in withRepo("newIndex") { repo =>
+      "have an index" in {
         repo.index should be('success)
       }
     }

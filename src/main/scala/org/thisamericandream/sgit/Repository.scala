@@ -234,7 +234,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   }
 
   protected override def freeObject() {
-    odb.foreach(Git2.odb_free(_))
+    odb.foreach(Git2.odb_free[Void](_))
     Git2.repository_free[Unit](this)
   }
 

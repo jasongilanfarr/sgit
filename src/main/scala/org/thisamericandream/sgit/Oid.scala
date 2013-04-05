@@ -8,12 +8,13 @@ import com.sun.jna.ptr.PointerByReference
 import scala.util.Try
 import scala.util.Success
 import com.sun.jna.Native
+import org.thisamericandream.sgit.struct.OidT
 
-class Oid(val ptr: Pointer) extends PointerType(ptr) with Ordered[Oid] {
-  def this() = this(Pointer.NULL)
+class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid] {
+  def this() = this(new OidT)
 
   def fmt(): String = {
-    val buf = new Memory(41)
+    val buf = new Memory(40)
     Git2.oid_fmt[Unit](buf, this)
     buf.getString(0, false)
   }
@@ -36,20 +37,16 @@ class Oid(val ptr: Pointer) extends PointerType(ptr) with Ordered[Oid] {
 }
 
 object Oid {
-  private[sgit] def apply(ptr: Pointer): Oid = {
-    new Oid(ptr)
-  }
-
   def fromRaw(raw: String): Oid = {
-    val ptr = new PointerByReference
-    Git2.oid_fromraw[Void](ptr, raw)
-    Oid(ptr.getValue)
+    val oid = new Oid
+    Git2.oid_fromraw[Unit](oid, raw)
+    oid
   }
 
   def fromString(str: String): Try[Oid] = {
-    val ptr = new PointerByReference
-    Git2.oid_fromstr[Int](ptr, str) match {
-      case 0 => Success(Oid(ptr.getValue))
+    val oid = new Oid
+    Git2.oid_fromstr[Int](oid, str) match {
+      case 0 => Success(oid)
       case x => Git2.exception(x)
     }
   }

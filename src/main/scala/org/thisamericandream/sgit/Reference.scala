@@ -69,7 +69,7 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
 
   def rename(newName: String, force: Boolean): Try[Reference] = {
     val ptr = new PointerByReference
-    Git2.reference_rename[Int](ptr, this, newName, if (force) { 1 } else { 0 }) match {
+    Git2.reference_rename[Int](ptr, this, newName, force) match {
       case 0 => Success(new Reference(ptr.getValue))
       case x => Git2.exception(x)
     }
@@ -132,7 +132,7 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
 object Reference {
   def create(repo: Repository, name: String, id: Oid, force: Boolean): Try[Reference] = {
     val ptr = new PointerByReference
-    Git2.reference_create[Int](ptr, repo, name, id, if (force) { 1 } else { 0 }) match {
+    Git2.reference_create[Int](ptr, repo, name, id, force) match {
       case 0 => Success(new Reference(ptr.getValue))
       case x => Git2.exception(x)
     }
@@ -140,7 +140,7 @@ object Reference {
 
   def createSymbolic(repo: Repository, name: String, target: String, force: Boolean): Try[Reference] = {
     val ptr = new PointerByReference
-    Git2.reference_symbolic_create[Int](ptr, repo, name, target, if (force) { 1 } else { 0 }) match {
+    Git2.reference_symbolic_create[Int](ptr, repo, name, target, force) match {
       case 0 => Success(new Reference(ptr.getValue))
       case x => Git2.exception(x)
     }

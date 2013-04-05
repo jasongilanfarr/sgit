@@ -12,9 +12,9 @@ class Config private[sgit] (ptr: Pointer) extends PointerType with Freeable with
   def this() = this(Pointer.NULL)
 
   private class ForeachCb[U](f: (ConfigEntryT) => U) extends Callback {
-    def callback(entry: ConfigEntryT, ptr: Pointer): Int = {
+    def callback(entry: ConfigEntryT, ptr: Pointer): Boolean = {
       f(entry)
-      0
+      false
     }
   }
 
@@ -25,7 +25,9 @@ class Config private[sgit] (ptr: Pointer) extends PointerType with Freeable with
   def -=(name: String) = deleteEntry(name)
 
   override def foreach[U](f: (ConfigEntryT) => U) {
-    Git2.config_foreach[Int](this, new ForeachCb(f), Pointer.NULL)
+    val cb = new ForeachCb(f)
+    // TODO should an exception be thrown on a non User error?
+    Git2.config_foreach[Int](this, cb, Pointer.NULL)
   }
 
   protected override def freeObject() {

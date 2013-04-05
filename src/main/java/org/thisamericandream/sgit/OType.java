@@ -17,4 +17,13 @@ public enum OType {
   OType(int id) {
     this.id = id;
   }
+  
+  public static OType forId(int id) {
+    for(OType lvl: OType.values()) {
+      if (lvl.id == id) {
+        return lvl;
+      }
+    }
+    return null;
+  }
 }

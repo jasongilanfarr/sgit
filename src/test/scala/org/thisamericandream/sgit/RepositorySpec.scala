@@ -19,16 +19,7 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
   var toFree: List[Freeable] = Nil
 
   override def afterAll {
-    Files.walkFileTree(tempDir, new SimpleFileVisitor[Path]() {
-      override def visitFile(file: Path, attr: BasicFileAttributes): FileVisitResult = {
-        Files.delete(file)
-        FileVisitResult.CONTINUE
-      }
-      override def postVisitDirectory(dir: Path, ex: IOException): FileVisitResult = {
-        Files.delete(dir)
-        FileVisitResult.CONTINUE
-      }
-    })
+    FileUtils.deleteRecursively(tempDir)
     toFree.foreach(_.free)
   }
 

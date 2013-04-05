@@ -5,6 +5,8 @@ import org.scalatest.Suite
 import java.nio.file.Files
 import org.scalatest.BeforeAndAfterAll
 import java.util.UUID
+import java.net.URLClassLoader
+import java.io.File
 
 trait TestRepository extends Suite with BeforeAndAfterAll {
   private val tempDir = Files.createTempDirectory("sgit")
@@ -12,8 +14,8 @@ trait TestRepository extends Suite with BeforeAndAfterAll {
 
   def testRepo(bare: Boolean = false): Repository = {
     val dir = Files.createTempDirectory(UUID.randomUUID.toString)
-
-    val repo = Repository.clone("test-repo", dir.toString).get
+    val testRepoDir = getClass.getClassLoader.asInstanceOf[URLClassLoader].getURLs.find(_.toString.contains("test-classes")).get
+    val repo = Repository.clone(testRepoDir.getFile + "test-repo", dir.toString).get
     reposToFree ::= repo
     repo
   }

@@ -77,6 +77,18 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     }
   }
 
+  def lookup(id: Oid): Try[GitObject] = {
+    GitObject.lookup(this, id, OType.Any)
+  }
+
+  def revParse(spec: String): Try[GitObject] = {
+    GitObject.revParse(this, spec)
+  }
+
+  def ref(refName: String): Try[Reference] = {
+    Reference.lookup(this, refName)
+  }
+
   def head_=(refName: String): Try[Unit] = {
     Git2.unitValue(Git2.repository_set_head[Int](this, refName))
   }
@@ -177,7 +189,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   def contains(oid: Oid): Try[Boolean] = {
     odb.map { odbPtr =>
       Git2.odb_exists[Int](odbPtr, oid) match {
-        case -1 => true
+        case 1 => true
         case x => false
       }
     }
@@ -206,7 +218,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     val oTypePtr = new IntByReference
 
     odb.flatMap { odbPtr =>
-      Git2.odb_read_header[Int](lenPtr, oTypePtr, odb, oid) match {
+      Git2.odb_read_header[Int](lenPtr, oTypePtr, odbPtr, oid) match {
         case 0 => Success((OType.forId(oTypePtr.getValue()), lenPtr.getValue().longValue()))
         case x => Git2.exception(x)
       }

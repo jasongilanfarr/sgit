@@ -25,13 +25,16 @@ class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid]
 
   override def equals(that: Any) = that match {
     case t: Oid =>
-      Git2.oid_equal[Int](this, that) == 1
+      compare(t) == 0
     case t: String =>
       Git2.oid_streq[Int](this, t) == 1
     case _ => false
   }
 
-  override def compare(that: Oid) = Git2.oid_cmp[Int](this, that)
+  override def compare(that: Oid): Int = {
+    val diff = oidT.id.view.zip(that.oidT.id).find { case (sha1, sha2) => sha1 != sha2 }.getOrElse(('0', '0'))
+    (diff._1 - diff._2).toInt
+  }
 
   implicit override def toString: String = fmt
 }

@@ -145,4 +145,13 @@ object Reference {
       case x => Git2.exception(x)
     }
   }
+
+  def lookup(repo: Repository, name: String): Try[Reference] = {
+    val ptr = new PointerByReference
+    Git2.reference_lookup[Int](ptr, repo, name) match {
+      case 0 => Success(new Reference(ptr.getValue))
+      case x => Git2.exception(x)
+    }
+  }
+
 }

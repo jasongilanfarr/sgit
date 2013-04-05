@@ -14,7 +14,7 @@ import java.nio.file.FileVisitResult
 import scala.util.Failure
 import org.scalatest.BeforeAndAfterAll
 
-class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll {
+class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll with TestRepository {
   val tempDir = Files.createTempDirectory("sgit")
   var toFree: List[Freeable] = Nil
 
@@ -29,6 +29,10 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
     val repo = Repository.init(subDir.toString, bare).get
     toFree ::= repo
     testCode(repo)
+  }
+
+  def withTestRepo(bare: Boolean = false)(testCode: Repository => Any) {
+    testCode(testRepo(bare))
   }
 
   "Repository" should {
@@ -59,6 +63,10 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
     "be freeable" in withRepo("freeable") { repo =>
       Repository(repo.workDir.get).get.free
     }
+    "fail to open non-existing repos" in {
+      val subDir = Files.createTempDirectory(tempDir, "fail")
+      Repository(subDir.toString) should be('failure)
+    }
     "New Repositories" should withRepo("newRepos") { repo =>
       "have an orphaned head" in {
         repo.isHeadOrphan.get should be(true)
@@ -74,6 +82,29 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
       }
       "have an index" in {
         repo.index should be('success)
+      }
+    }
+    "when using a non-bare test repository" should withTestRepo() { repo =>
+      "have the correct head" in {
+        val head = repo.head
+        head should be('success)
+        head.get.target should be('defined)
+        head.get.target.get should equal(Oid.fromString("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get)
+      }
+      "be able to check if objects exist" in {
+        repo.contains("207ef088ee067e000e6e0047bce198411b804f41").get should be(true)
+        repo.contains("8496071c1c46c854b31185ea97743be6a8774479").get should be(false)
+      }
+      "be able to read a raw object" in {
+        val raw = repo.read("b02def2d0ff040b219b32ff5611e164f7252bc9f").get
+        raw.`type` should equal(OType.Blob)
+        raw.len should equal(11)
+        new String(raw.data.map(_.toChar)) should equal("test\ntest2\n")
+      }
+      "be able to read object headers" in {
+        val header = repo.readHeader("b02def2d0ff040b219b32ff5611e164f7252bc9f").get
+        header._1 should equal(OType.Blob)
+        header._2 should equal(11L)
       }
     }
   }

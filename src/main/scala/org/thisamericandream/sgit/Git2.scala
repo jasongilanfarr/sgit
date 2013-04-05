@@ -12,11 +12,16 @@ import scala.util.Success
 import scala.util.Try
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.Native
+import org.thisamericandream.sgit.struct.ErrorT
 
 class GitException(val code: Int) extends Exception {
+  val err = Git2.lastError()
+  require(err.isDefined)
+  Git2.clearError()
+
   def errorCode = ErrorCode.forId(code)
   override def toString(): String = {
-    s"Error Code: ${errorCode}"
+    err.get.message
   }
 }
 
@@ -31,6 +36,13 @@ object Git2 extends Dynamic {
 
     Git2.libgit2_version[Unit](major, minor, rev)
     (major.getValue, minor.getValue, rev.getValue)
+  }
+
+  def lastError(): Option[ErrorT] = {
+    Option(lib.getFunction("giterr_last").invoke(classOf[ErrorT], Array[AnyRef]()).asInstanceOf[ErrorT])
+  }
+  def clearError() {
+    lib.getFunction("giterr_clear").invokeVoid(Array[AnyRef]());
   }
 
   def applyDynamic[R: ClassTag](methodName: String)(args: Any*): R = {

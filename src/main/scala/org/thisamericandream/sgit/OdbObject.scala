@@ -14,18 +14,21 @@ class OdbObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   }
 
   def data(): Array[Byte] = {
-    val size = Git2.odb_object_size[NativeLong](ptr)
     val data = Git2.odb_object_data[Pointer](ptr)
 
-    data.getByteArray(0, size.intValue);
+    data.getByteArray(0, len().toInt)
+  }
+
+  def len(): Long = {
+    Git2.odb_object_size[NativeLong](ptr).longValue
   }
 
   def `type`(): OType = {
-    OType.forId(Git2.odb_odbject_type[Int](ptr))
+    OType.forId(Git2.odb_object_type[Int](ptr))
   }
 
   protected def freeObject() {
-    Git2.odb_odbject_free(ptr)
+    Git2.odb_odbject_free[Void](ptr)
   }
 }
 

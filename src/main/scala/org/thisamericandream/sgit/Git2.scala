@@ -21,7 +21,7 @@ class GitException(val code: Int) extends Exception {
 
   def errorCode = ErrorCode.forId(code)
   override def toString(): String = {
-    err.get.message
+    s"${errorCode} - ${err.get.message}"
   }
 }
 

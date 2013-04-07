@@ -6,6 +6,7 @@ import scala.util.Try
 import org.thisamericandream.sgit.struct.OidT
 import com.sun.jna.ptr.PointerByReference
 import scala.util.Success
+import scala.util.Failure
 
 class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   def this() = this(Pointer.NULL)
@@ -21,7 +22,8 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   def peel[T >: GitObject](`type`: OType): Try[T] = {
     val ptr = new PointerByReference
     Git2.object_peel[Int](ptr, this, `type`.id) match {
-      case 0 => Success(GitObject.forOType(ptr.getValue, `type`))
+      case 0 =>
+        GitObject.forPtr(ptr.getValue).map(_.asInstanceOf[T]).map(Success(_)).getOrElse(Failure(new Exception("Bad Object")))
       case x => Git2.exception(x)
 
     }
@@ -30,6 +32,8 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   def `type`(): OType = {
     OType.forId(Git2.object_type[Int](this))
   }
+
+  override def toString = id().toString
 
   override def equals(other: Any): Boolean = other match {
     case x: GitObject =>
@@ -42,18 +46,21 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
 }
 
 object GitObject {
-  def forOType[T >: GitObject](ptr: Pointer, `type`: OType): T = `type` match {
-    case OType.Blob => new Blob(ptr)
-    case OType.Commit => new Commit(ptr)
-    case OType.Tag => new Commit(ptr)
-    case OType.Tree => new Tree(ptr)
-    case _ => new GitObject(ptr)
+  private[sgit] def forPtr(ptr: Pointer): Try[GitObject] = id(ptr) match {
+    case OType.Blob => Success(new Blob(ptr))
+    case OType.Commit => Success(new Commit(ptr))
+    case OType.Tag => Success(new Tag(ptr))
+    case OType.Tree => Success(new Tree(ptr))
+    // TODO: Use a proper exception
+    case OType.Bad => Failure(new Exception("Bad Object"))
+    case _ => Success(new GitObject(ptr))
   }
 
-  def lookup[T >: GitObject](repo: Repository, id: Oid, `type`: OType): Try[T] = {
+  def lookup[T <: GitObject](repo: Repository, oid: Oid, `type`: OType): Try[T] = {
     val ptr = new PointerByReference
-    Git2.object_lookup[Int](ptr, repo, id, `type`.id) match {
-      case 0 => Success(forOType(ptr.getValue, `type`))
+    Git2.object_lookup[Int](ptr, repo, oid, `type`.id) match {
+      case 0 =>
+        forPtr(ptr.getValue).map(_.asInstanceOf[T])
       case x => Git2.exception(x)
     }
   }
@@ -67,15 +74,14 @@ object GitObject {
   }
 
   private def id(ptr: Pointer): OType = {
-    OType.forId(Git2.object_type[Int](this))
+    OType.forId(Git2.object_type[Int](ptr))
   }
 
-  def revParse[T >: GitObject](repo: Repository, spec: String): Try[T] = {
+  def revParse[T <: GitObject](repo: Repository, spec: String): Try[T] = {
     val ptr = new PointerByReference
     Git2.revparse_single[Int](ptr, repo, spec) match {
       case 0 =>
-        Success(forOType(ptr.getValue, id(ptr.getValue)))
-        Success(new GitObject(ptr.getValue))
+        forPtr(ptr.getValue).map(_.asInstanceOf[T])
       case x => Git2.exception(x)
     }
   }

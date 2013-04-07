@@ -67,7 +67,7 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
       val subDir = Files.createTempDirectory(tempDir, "fail")
       Repository(subDir.toString) should be('failure)
     }
-    "New Repositories" should withRepo("newRepos") { repo =>
+    "when working with new repositories" should withRepo("newRepos") { repo =>
       "have an orphaned head" in {
         repo.isHeadOrphan.get should be(true)
       }
@@ -105,6 +105,26 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
         val header = repo.readHeader("b02def2d0ff040b219b32ff5611e164f7252bc9f").get
         header._1 should equal(OType.Blob)
         header._2 should equal(11L)
+      }
+      "be able to lookup an object" in {
+        val obj = repo.lookup("b02def2d0ff040b219b32ff5611e164f7252bc9f").get
+        obj.getClass should equal(classOf[Blob])
+      }
+      "be able to find a reference" in {
+        val ref = repo.ref("refs/heads/master")
+        ref.recover { case e => println(e.toString) }
+        ref.get.name should equal("refs/heads/master")
+      }
+      "be able to match refs" in {
+        repo.refs("refs".r).size should equal(3)
+      }
+      "list all refs" in {
+        repo.refs.size should equal(3)
+      }
+      "list all tagNames" in {
+        val tags = repo.tagNames
+        tags.size should equal(1)
+        tags.head should equal("refs/tags/test-tag")
       }
     }
   }

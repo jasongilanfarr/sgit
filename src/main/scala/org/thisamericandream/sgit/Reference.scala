@@ -8,6 +8,10 @@ import scala.util.Try
 import com.sun.jna.ptr.PointerByReference
 import scala.util.Success
 import com.sun.jna.Memory
+import com.sun.jna.Callback
+import scala.collection.mutable.Buffer
+import org.thisamericandream.sgit.struct.OidT
+import scala.util.Failure
 
 class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with Freeable with Ordered[Reference] {
   def this() = this(Pointer.NULL)
@@ -17,9 +21,9 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
   }
 
   def nameToId(): Try[Oid] = {
-    val oid = new Oid
+    val oid = new OidT
     Git2.reference_name_to_id[Int](oid, this, name) match {
-      case 0 => Success(oid)
+      case 0 => Success(new Oid(oid))
       case x => Git2.exception(x)
     }
   }
@@ -35,7 +39,8 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
   def peel(`type`: OType): Try[GitObject] = {
     val ptr = new PointerByReference
     Git2.reference_peel[Int](ptr, this, `type`.id) match {
-      case 0 => Success(new GitObject(ptr.getValue))
+      case 0 =>
+        GitObject.forPtr(ptr.getValue)
       case x => Git2.exception(x)
     }
   }
@@ -50,10 +55,6 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
 
   def isRemote(): Try[Boolean] = {
     Git2.boolValue(Git2.reference_is_remote[Int](this))
-  }
-
-  def isValidName(): Try[Boolean] = {
-    Git2.boolValue(Git2.reference_is_valid_name[Int](this))
   }
 
   def isSymbolic(): Boolean = {
@@ -154,4 +155,20 @@ object Reference {
     }
   }
 
+  def allNames(repo: Repository): Seq[String] = {
+    val seq = Buffer[String]()
+    class ForeachCb extends Callback {
+      def callback(refName: String): Int = {
+        seq += refName
+        0
+      }
+    }
+
+    Git2.reference_foreach[Int](repo, 1 | 2 /* all */ , new ForeachCb)
+    seq.toSeq
+  }
+
+  def isValidName(name: String): Try[Boolean] = {
+    Git2.boolValue(Git2.reference_is_valid_name[Int](name))
+  }
 }

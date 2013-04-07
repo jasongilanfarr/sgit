@@ -13,6 +13,7 @@ import scala.collection.mutable.Buffer
 import com.sun.jna.Callback
 import scala.util.Failure
 import com.sun.jna.ptr.NativeLongByReference
+import scala.util.matching.Regex
 
 class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   def this() = this(Pointer.NULL)
@@ -89,6 +90,24 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Reference.lookup(this, refName)
   }
 
+  def refs(pattern: Regex): Traversable[Reference] = {
+    Reference.allNames(this).filter(pattern.findFirstIn(_).isDefined).map { name =>
+      ref(name)
+    }.filter(_.isSuccess).map(_.get)
+  }
+
+  def refNames(): Traversable[String] = {
+    Reference.allNames(this)
+  }
+
+  def refs(): Traversable[Reference] = {
+    Reference.allNames(this).map(ref(_)).filter(_.isSuccess).map(_.get)
+  }
+
+  def tagNames(): Seq[String] = {
+    Tag.allNames(this)
+  }
+
   def head_=(refName: String): Try[Unit] = {
     Git2.unitValue(Git2.repository_set_head[Int](this, refName))
   }
@@ -103,21 +122,6 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
 
   def index_=(idx: Index): Try[Unit] = {
     Git2.repository_set_index[Int](this, idx) match {
-      case 0 => Success()
-      case x => Git2.exception(x)
-    }
-  }
-
-  def refDb(): Try[RefDb] = {
-    val refPtr = new PointerByReference
-    Git2.repository_refdb[Int](refPtr, this) match {
-      case 0 => Success(new RefDb(refPtr.getValue))
-      case x => Git2.exception(x)
-    }
-  }
-
-  def refDb_=(refDb: RefDb): Try[Unit] = {
-    Git2.repository_set_refdb[Int](this, refDb) match {
       case 0 => Success()
       case x => Git2.exception(x)
     }

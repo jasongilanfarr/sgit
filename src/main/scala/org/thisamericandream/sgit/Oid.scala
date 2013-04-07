@@ -32,8 +32,8 @@ class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid]
   }
 
   override def compare(that: Oid): Int = {
-    val diff = oidT.id.view.zip(that.oidT.id).find { case (sha1, sha2) => sha1 != sha2 }.getOrElse(('0', '0'))
-    (diff._1 - diff._2).toInt
+    val diff = oidT.id.view.zip(that.oidT.id).find { case (sha1, sha2) => sha1 != sha2 }
+    diff.map(x => x._1 - x._2).getOrElse(0)
   }
 
   implicit override def toString: String = fmt

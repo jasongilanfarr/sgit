@@ -6,7 +6,7 @@ import java.util.List;
 import com.sun.jna.Structure;
 
 public class OidT extends Structure {
-  public char[] id = new char[20];
+  public byte[] id = new byte[20];
 
   @Override
   public List<String> getFieldOrder() {

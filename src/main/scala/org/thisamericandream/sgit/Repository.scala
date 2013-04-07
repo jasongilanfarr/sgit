@@ -78,8 +78,12 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     }
   }
 
+  def head_=(refName: String): Try[Unit] = {
+    Git2.unitValue(Git2.repository_set_head[Int](this, refName))
+  }
+
   def lookup(id: Oid): Try[GitObject] = {
-    GitObject.lookup(this, id, OType.Any)
+    GitObject.lookup(this, id)
   }
 
   def revParse(spec: String): Try[GitObject] = {
@@ -108,8 +112,13 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Tag.allNames(this)
   }
 
-  def head_=(refName: String): Try[Unit] = {
-    Git2.unitValue(Git2.repository_set_head[Int](this, refName))
+  def blobAt(oid: Oid, path: String): Try[Blob] = {
+    for (
+      commit <- Commit.lookup(this, oid);
+      tree <- commit.tree;
+      blobData <- tree.entryByPath(path);
+      blob <- Blob.lookup(this, blobData.id)
+    ) yield blob
   }
 
   def index(): Try[Index] = {

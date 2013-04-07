@@ -9,9 +9,12 @@ import scala.util.Try
 import scala.util.Success
 import com.sun.jna.Native
 import org.thisamericandream.sgit.struct.OidT
+import com.sun.jna.FromNativeContext
 
 class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid] {
   def this() = this(new OidT)
+
+  override def getPointer(): Pointer = oidT.getPointer()
 
   def fmt(): String = {
     val buf = new Memory(40)

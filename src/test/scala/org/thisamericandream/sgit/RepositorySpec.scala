@@ -126,6 +126,19 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
         tags.size should equal(1)
         tags.head should equal("refs/tags/test-tag")
       }
+      "list all objects" in {
+        val objects = repo.ids.get
+        objects.size should equal(7)
+      }
+      "lookup head" in {
+        val head = repo.head.get
+        head.target.get should equal(Oid.fromString("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get)
+        head should be('direct)
+      }
+      "access a file" in {
+        val raw = repo.blobAt("536c169501d92f7abc1ebbad1b79ba63a2e40e67", "test").get.content
+        new String(raw.map(_.toChar)) should equal("test\ntest2\n")
+      }
     }
   }
 

@@ -16,21 +16,21 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   }
 
   def owner(): Repository = {
-    new Repository(Git2.object_owner[Pointer](this))
+    new Repository(Git2.object_owner[Pointer](ptr))
   }
 
   def peel[T >: GitObject](`type`: OType): Try[T] = {
-    val ptr = new PointerByReference
-    Git2.object_peel[Int](ptr, this, `type`.id) match {
+    val ptrRef = new PointerByReference
+    Git2.object_peel[Int](ptrRef, ptr, `type`.id) match {
       case 0 =>
-        GitObject.forPtr(ptr.getValue).map(_.asInstanceOf[T]).map(Success(_)).getOrElse(Failure(new Exception("Bad Object")))
+        GitObject.forPtr(ptrRef.getValue)
       case x => Git2.exception(x)
 
     }
   }
 
   def `type`(): OType = {
-    OType.forId(Git2.object_type[Int](this))
+    OType.forId(Git2.object_type[Int](ptr))
   }
 
   override def toString = id().toString
@@ -56,9 +56,9 @@ object GitObject {
     case _ => Success(new GitObject(ptr))
   }
 
-  def lookup[T <: GitObject](repo: Repository, oid: Oid, `type`: OType): Try[T] = {
+  def lookup[T <: GitObject](repo: Repository, oid: Oid): Try[T] = {
     val ptr = new PointerByReference
-    Git2.object_lookup[Int](ptr, repo, oid, `type`.id) match {
+    Git2.object_lookup[Int](ptr, repo, oid, OType.Any.id) match {
       case 0 =>
         forPtr(ptr.getValue).map(_.asInstanceOf[T])
       case x => Git2.exception(x)

@@ -13,41 +13,41 @@ class Tag private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeable 
   def this() = this(Pointer.NULL)
 
   override def id(): Oid = {
-    new Oid(Git2.tag_id[OidT](this))
+    new Oid(Git2.tag_id[OidT](ptr))
   }
 
   def message(): String = {
-    Git2.tag_message[String](this)
+    Git2.tag_message[String](ptr)
   }
 
   def name(): String = {
-    Git2.tag_name[String](this)
+    Git2.tag_name[String](ptr)
   }
 
   override def peel[T >: GitObject](`type`: OType = OType.Commit): Try[GitObject] = {
-    val ptr = new PointerByReference
-    Git2.tag_peel[Int](ptr, this) match {
+    val ptrRef = new PointerByReference
+    Git2.tag_peel[Int](ptrRef, ptr) match {
       case 0 =>
-        GitObject.forPtr(ptr.getValue).map(Success(_)).getOrElse(Failure(new Exception("Bad Object")))
+        GitObject.forPtr(ptrRef.getValue).map(Success(_)).getOrElse(Failure(new Exception("Bad Object")))
       case x => Git2.exception(x)
     }
   }
 
   def targetId(): Oid = {
-    new Oid(Git2.tag_target_id[OidT](this))
+    new Oid(Git2.tag_target_id[OidT](ptr))
   }
 
   def target(): Try[GitObject] = {
-    val ptr = new PointerByReference
-    Git2.tag_target[Int](ptr, this) match {
+    val ptrRef = new PointerByReference
+    Git2.tag_target[Int](ptrRef, ptr) match {
       case 0 =>
-        GitObject.forPtr(ptr.getValue)
+        GitObject.forPtr(ptrRef.getValue)
       case x => Git2.exception(x)
     }
   }
 
   def targetType(): OType = {
-    OType.forId(Git2.taget_target_type[Int](this))
+    OType.forId(Git2.taget_target_type[Int](ptr))
   }
 
   override def toString: String = name()
@@ -74,5 +74,4 @@ object Tag {
     Git2.tag_foreach[Int](repo, new ForeachCb, Pointer.NULL)
     tags.toSeq
   }
-
 }

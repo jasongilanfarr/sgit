@@ -1,27 +1,29 @@
 package org.thisamericandream.sgit
 
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import org.thisamericandream.sgit.struct.OidT
+
 import com.sun.jna.Pointer
 import com.sun.jna.PointerType
-import scala.util.Try
-import org.thisamericandream.sgit.struct.OidT
 import com.sun.jna.ptr.PointerByReference
-import scala.util.Success
-import scala.util.Failure
 
-class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
-  def this() = this(Pointer.NULL)
+trait GitObject extends Freeable {
+  self: PointerType =>
 
   def id(): Oid = {
-    new Oid(Git2.object_id[OidT](ptr))
+    new Oid(Git2.object_id[OidT](getPointer))
   }
 
   def owner(): Repository = {
-    new Repository(Git2.object_owner[Pointer](ptr))
+    new Repository(Git2.object_owner[Pointer](getPointer))
   }
 
   def peel[T >: GitObject](`type`: OType): Try[T] = {
     val ptrRef = new PointerByReference
-    Git2.object_peel[Int](ptrRef, ptr, `type`.id) match {
+    Git2.object_peel[Int](ptrRef, getPointer, `type`.id) match {
       case 0 =>
         GitObject.forPtr(ptrRef.getValue)
       case x => Git2.exception(x)
@@ -30,7 +32,7 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   }
 
   def `type`(): OType = {
-    OType.forId(Git2.object_type[Int](ptr))
+    OType.forId(Git2.object_type[Int](getPointer))
   }
 
   override def toString = id().toString
@@ -40,8 +42,11 @@ class GitObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
       id == x.id
     case _ => false
   }
+}
+
+sealed class DefaultGitObject(ptr: Pointer) extends PointerType(ptr) with GitObject {
   override def freeObject() {
-    Git2.object_free[Void](ptr)
+    Git2.object_free[Void](getPointer)
   }
 }
 
@@ -53,7 +58,7 @@ object GitObject {
     case OType.Tree => Success(new Tree(ptr))
     // TODO: Use a proper exception
     case OType.Bad => Failure(new Exception("Bad Object"))
-    case _ => Success(new GitObject(ptr))
+    case _ => Success(new DefaultGitObject(ptr))
   }
 
   def lookup[T <: GitObject](repo: Repository, oid: Oid): Try[T] = {

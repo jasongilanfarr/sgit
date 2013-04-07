@@ -4,42 +4,42 @@ import com.sun.jna.Pointer
 import com.sun.jna.Callback
 import scala.collection.mutable.Buffer
 import org.thisamericandream.sgit.struct.OidT
-import com.sun.jna.ptr.PointerByReference
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import com.sun.jna.PointerType
+import com.sun.jna.ptr.PointerByReference
 
-class Tag private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeable {
+class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject {
   def this() = this(Pointer.NULL)
 
   override def id(): Oid = {
-    new Oid(Git2.tag_id[OidT](ptr))
+    new Oid(Git2.tag_id[OidT](this))
   }
 
   def message(): String = {
-    Git2.tag_message[String](ptr)
+    Git2.tag_message[String](this)
   }
 
   def name(): String = {
-    Git2.tag_name[String](ptr)
+    Git2.tag_name[String](this)
   }
 
   override def peel[T >: GitObject](`type`: OType = OType.Commit): Try[GitObject] = {
     val ptrRef = new PointerByReference
-    Git2.tag_peel[Int](ptrRef, ptr) match {
-      case 0 =>
-        GitObject.forPtr(ptrRef.getValue).map(Success(_)).getOrElse(Failure(new Exception("Bad Object")))
+    Git2.tag_peel[Int](ptrRef, this) match {
+      case 0 => GitObject.forPtr(ptrRef.getValue)
       case x => Git2.exception(x)
     }
   }
 
   def targetId(): Oid = {
-    new Oid(Git2.tag_target_id[OidT](ptr))
+    new Oid(Git2.tag_target_id[OidT](this))
   }
 
   def target(): Try[GitObject] = {
     val ptrRef = new PointerByReference
-    Git2.tag_target[Int](ptrRef, ptr) match {
+    Git2.tag_target[Int](ptrRef, this) match {
       case 0 =>
         GitObject.forPtr(ptrRef.getValue)
       case x => Git2.exception(x)
@@ -47,7 +47,7 @@ class Tag private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeable 
   }
 
   def targetType(): OType = {
-    OType.forId(Git2.taget_target_type[Int](ptr))
+    OType.forId(Git2.taget_target_type[Int](this))
   }
 
   override def toString: String = name()

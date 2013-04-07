@@ -8,33 +8,34 @@ import scala.util.Success
 import org.thisamericandream.sgit.struct.SignatureT
 import org.thisamericandream.sgit.struct.TimeT
 import scala.collection.mutable.Buffer
+import com.sun.jna.PointerType
 
-class Commit private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeable {
+class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject with Freeable {
   def this() = this(Pointer.NULL)
 
   def message(): String = {
-    Git2.commit_message[String](ptr)
+    Git2.commit_message[String](this)
   }
 
   def messageEncoding(): String = {
-    Git2.commit_message_encoding[String](ptr)
+    Git2.commit_message_encoding[String](this)
   }
 
   def committer(): SignatureT = {
-    Git2.commit_committer[SignatureT](ptr)
+    Git2.commit_committer[SignatureT](this)
   }
 
   def commitAuthor(): SignatureT = {
-    Git2.commit_author[SignatureT](ptr)
+    Git2.commit_author[SignatureT](this)
   }
 
   def epochTime(): TimeT = {
-    Git2.commit_time[TimeT](ptr)
+    Git2.commit_time[TimeT](this)
   }
 
   def tree(): Try[Tree] = {
     val ptrRef = new PointerByReference
-    Git2.commit_tree[Int](ptrRef, ptr) match {
+    Git2.commit_tree[Int](ptrRef, this) match {
       case 0 => Success(new Tree(ptrRef.getValue))
       case x => Git2.exception(x)
     }
@@ -42,16 +43,16 @@ class Commit private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeab
 
   def treeId(): Oid = {
     val oid = new OidT
-    new Oid(Git2.commit_tree_id[OidT](ptr))
+    new Oid(Git2.commit_tree_id[OidT](this))
   }
 
   def parents(): Seq[Commit] = {
-    val parentCount = Git2.commit_parent_count[Int](ptr)
+    val parentCount = Git2.commit_parent_count[Int](this)
     val seq = Buffer[Commit]()
     var i = 0
     while (i < parentCount) {
       val ptrRef = new PointerByReference
-      Git2.commit_parent[Int](ptrRef, ptr, i) match {
+      Git2.commit_parent[Int](ptrRef, this, i) match {
         case 0 => seq += new Commit(ptrRef.getValue)
         case x => i = parentCount
       }

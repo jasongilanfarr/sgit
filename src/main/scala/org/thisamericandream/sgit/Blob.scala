@@ -5,13 +5,14 @@ import com.sun.jna.ptr.PointerByReference
 import scala.util.Try
 import scala.util.Success
 import com.sun.jna.NativeLong
+import com.sun.jna.PointerType
 
-class Blob private[sgit] (val ptr: Pointer) extends GitObject(ptr) with Freeable {
+class Blob private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject {
   def this() = this(Pointer.NULL)
 
   def content(): Array[Byte] = {
-    val size = Git2.blob_rawsize[NativeLong](ptr)
-    val raw = Git2.blob_rawcontent[Pointer](ptr)
+    val size = Git2.blob_rawsize[NativeLong](this)
+    val raw = Git2.blob_rawcontent[Pointer](this)
 
     raw.getByteArray(0, size.intValue)
   }

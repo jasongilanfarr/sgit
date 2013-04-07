@@ -47,7 +47,7 @@ class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObje
   }
 
   def targetType(): OType = {
-    OType.forId(Git2.taget_target_type[Int](this))
+    OType.forId(Git2.tag_target_type[Int](this))
   }
 
   override def toString: String = name()
@@ -58,8 +58,17 @@ class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObje
 }
 
 object Tag {
+  def all(repo: Repository): Seq[Tag] = {
+    allNames(repo).map(Tag(repo, _)).filter(_.isSuccess).map(_.get)
+  }
+
   def allNames(repo: Repository): Seq[String] = {
     allNamesWithOid(repo).map(_._1)
+  }
+
+  def apply(repo: Repository, name: String): Try[Tag] = {
+    Reference.fromName(repo, name).flatMap(oid =>
+      GitObject.lookup[Tag](repo, oid))
   }
 
   def allNamesWithOid(repo: Repository): Seq[(String, Oid)] = {

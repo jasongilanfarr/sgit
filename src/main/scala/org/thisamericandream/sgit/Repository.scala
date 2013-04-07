@@ -82,8 +82,12 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.unitValue(Git2.repository_set_head[Int](this, refName))
   }
 
-  def lookup(id: Oid): Try[GitObject] = {
-    GitObject.lookup(this, id)
+  def lastCommit(): Try[Commit] = {
+    head.flatMap(h => lookup[Commit](h.target))
+  }
+
+  def lookup[T <: GitObject](id: Oid): Try[T] = {
+    GitObject.lookup[T](this, id)
   }
 
   def revParse(spec: String): Try[GitObject] = {
@@ -243,7 +247,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
       val nativeBuf = new Memory(buf.size)
       nativeBuf.write(0, buf, 0, buf.length)
       val oid = new Oid
-      Git2.odb_write[Int](oid, odbPtr, nativeBuf, nativeBuf.size(), `type`.id) match {
+      Git2.odb_write[Int](oid, odbPtr, nativeBuf, buf.length, `type`.id) match {
         case 0 => Success(oid)
         case x => Git2.exception(x)
       }
@@ -308,7 +312,7 @@ object Repository {
     val oid = new Oid
     val nativeBuffer = new Memory(buffer.length)
     nativeBuffer.write(0, buffer, 0, buffer.length)
-    Git2.odb_hash[Int](oid, nativeBuffer, nativeBuffer.size, `type`.id) match {
+    Git2.odb_hash[Int](oid, nativeBuffer, buffer.length, `type`.id) match {
       case 0 => Success(oid)
       case x => Git2.exception(x)
     }

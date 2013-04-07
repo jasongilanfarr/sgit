@@ -20,6 +20,10 @@ trait TestRepository extends Suite with BeforeAndAfterAll {
     repo
   }
 
+  def withTestRepo(bare: Boolean = false)(testCode: Repository => Any) {
+    testCode(testRepo(bare))
+  }
+
   abstract override def afterAll {
     reposToFree.foreach(_.free)
     FileUtils.deleteRecursively(tempDir)

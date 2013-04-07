@@ -31,10 +31,6 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
     testCode(repo)
   }
 
-  def withTestRepo(bare: Boolean = false)(testCode: Repository => Any) {
-    testCode(testRepo(bare))
-  }
-
   "Repository" should {
     "be creatable" in {
       val subDir = Files.createTempDirectory(tempDir, "init").toRealPath()
@@ -67,6 +63,10 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
       val subDir = Files.createTempDirectory(tempDir, "fail")
       Repository(subDir.toString) should be('failure)
     }
+    "be able to hash data" in {
+      val hash = Repository.hash("my test data\n".getBytes, OType.Blob)
+      hash.get.toString should equal("76b1b55ab653581d6f2c7230d34098e837197674")
+    }
     "when working with new repositories" should withRepo("newRepos") { repo =>
       "have an orphaned head" in {
         repo.isHeadOrphan.get should be(true)
@@ -88,8 +88,7 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
       "have the correct head" in {
         val head = repo.head
         head should be('success)
-        head.get.target should be('defined)
-        head.get.target.get should equal(Oid.fromString("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get)
+        head.get.target should equal(Oid.fromString("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get)
       }
       "be able to check if objects exist" in {
         repo.contains("207ef088ee067e000e6e0047bce198411b804f41").get should be(true)
@@ -106,9 +105,14 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
         header._1 should equal(OType.Blob)
         header._2 should equal(11L)
       }
+      "fail when reading a missing object" in {
+        val raw = repo.read("a496071c1b46c854b31185ea97743be6a8774471") should be('failure)
+      }
+      "fail when reading headers on a missing object" in {
+        val header = repo.readHeader("a496071c1b46c854b31185ea97743be6a8774471") should be('failure)
+      }
       "be able to lookup an object" in {
-        val obj = repo.lookup("b02def2d0ff040b219b32ff5611e164f7252bc9f").get
-        obj.getClass should equal(classOf[Blob])
+        repo.lookup[Blob]("b02def2d0ff040b219b32ff5611e164f7252bc9f") should be('success)
       }
       "be able to find a reference" in {
         val ref = repo.ref("refs/heads/master")
@@ -132,12 +136,17 @@ class RepositorySpec extends WordSpec with ShouldMatchers with BeforeAndAfterAll
       }
       "lookup head" in {
         val head = repo.head.get
-        head.target.get should equal(Oid.fromString("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get)
+        head.target.toString should equal("536c169501d92f7abc1ebbad1b79ba63a2e40e67")
         head should be('direct)
       }
       "access a file" in {
         val raw = repo.blobAt("536c169501d92f7abc1ebbad1b79ba63a2e40e67", "test").get.content
         new String(raw.map(_.toChar)) should equal("test\ntest2\n")
+      }
+      "be able to write to odb" in {
+        val oid = repo.write("my test data\n".getBytes, OType.Blob).get
+        oid.toString should equal("76b1b55ab653581d6f2c7230d34098e837197674")
+        repo.contains(oid).get should be(true)
       }
     }
   }

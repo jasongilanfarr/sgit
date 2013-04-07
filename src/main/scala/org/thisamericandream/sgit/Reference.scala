@@ -1,31 +1,22 @@
 package org.thisamericandream.sgit
 
-import com.sun.jna.Pointer
-import java.util.concurrent.atomic.AtomicBoolean
-import java.io.Closeable
-import com.sun.jna.PointerType
-import scala.util.Try
-import com.sun.jna.ptr.PointerByReference
-import scala.util.Success
-import com.sun.jna.Memory
-import com.sun.jna.Callback
 import scala.collection.mutable.Buffer
+import scala.util.Success
+import scala.util.Try
+
 import org.thisamericandream.sgit.struct.OidT
-import scala.util.Failure
+
+import com.sun.jna.Callback
+import com.sun.jna.Memory
+import com.sun.jna.Pointer
+import com.sun.jna.PointerType
+import com.sun.jna.ptr.PointerByReference
 
 class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with Freeable with Ordered[Reference] {
   def this() = this(Pointer.NULL)
 
   def name(): String = {
     Git2.reference_name[String](this)
-  }
-
-  def nameToId(): Try[Oid] = {
-    val oid = new OidT
-    Git2.reference_name_to_id[Int](oid, this, name) match {
-      case 0 => Success(new Oid(oid))
-      case x => Git2.exception(x)
-    }
   }
 
   def normalizeName(): Try[String] = {
@@ -84,8 +75,8 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def target(): Option[Oid] = {
-    Option(Git2.reference_target[Oid](this))
+  def target(): Oid = {
+    new Oid(Git2.reference_target[OidT](this))
   }
 
   def target_=(id: Oid): Try[Reference] = {
@@ -166,6 +157,14 @@ object Reference {
 
     Git2.reference_foreach[Int](repo, 1 | 2 /* all */ , new ForeachCb)
     seq.toSeq
+  }
+
+  def fromName(repo: Repository, name: String): Try[Oid] = {
+    val oid = new OidT
+    Git2.reference_name_to_id[Int](oid, repo, name) match {
+      case 0 => Success(new Oid(oid))
+      case x => Git2.exception(x)
+    }
   }
 
   def isValidName(name: String): Try[Boolean] = {

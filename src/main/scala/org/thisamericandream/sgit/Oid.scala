@@ -16,21 +16,16 @@ class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid]
 
   override def getPointer(): Pointer = oidT.getPointer()
 
-  def fmt(): String = {
-    val buf = new Memory(40)
-    Git2.oid_fmt[Unit](buf, this)
-    buf.getString(0, false)
-  }
-
   def isZero: Boolean = {
     Git2.oid_iszero[Int](this) == 1
   }
 
+  /** TODO: Be more optimized */
   override def equals(that: Any) = that match {
     case t: Oid =>
-      compare(t) == 0
+      toString == t.toString
     case t: String =>
-      Git2.oid_streq[Int](this, t) == 1
+      toString == t
     case _ => false
   }
 
@@ -39,7 +34,12 @@ class Oid(val oidT: OidT) extends PointerType(oidT.getPointer) with Ordered[Oid]
     diff.map(x => x._1 - x._2).getOrElse(0)
   }
 
-  implicit override def toString: String = fmt
+  override def toString: String = {
+    val buf = new Memory(41)
+    buf.setByte(40, '\0'.toByte)
+    Git2.oid_fmt[Unit](buf, this)
+    buf.getString(0, false)
+  }
 }
 
 object Oid {

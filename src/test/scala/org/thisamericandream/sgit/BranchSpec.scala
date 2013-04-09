@@ -20,6 +20,12 @@ class BranchSpec extends WordSpec with ShouldMatchers with TestRepository {
     "the lastest commit is correct" in {
       Branch.lookup(repo, "master").get.tip.get.id should equal("536c169501d92f7abc1ebbad1b79ba63a2e40e67")
     }
+    "have the correct tracking name" in {
+      Branch.lookup(repo, "master").get.trackingName.get should equal(Some("refs/remotes/origin/master"))
+    }
+    "have a tracking branch" in {
+      Branch.lookup(repo, "master").get.tracking.get should be ('defined)
+    }
     "lookup local branch" in {
       val branch = Branch.lookup(repo, "master").get
       branch.name.get should equal("master")

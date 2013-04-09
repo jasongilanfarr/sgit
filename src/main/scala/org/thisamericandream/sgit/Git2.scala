@@ -16,12 +16,11 @@ import org.thisamericandream.sgit.struct.ErrorT
 
 class GitException(val code: Int) extends Exception {
   val err = Git2.lastError()
-  require(err.isDefined)
   Git2.clearError()
 
   def errorCode = ErrorCode.forId(code)
   override def toString(): String = {
-    s"${errorCode} - ${err.get.message}"
+    s"${errorCode} - ${err.map(_.message)}"
   }
 }
 

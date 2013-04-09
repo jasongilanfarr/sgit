@@ -267,8 +267,8 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   }
 
   protected override def freeObject() {
-    odb.foreach(Git2.odb_free[Void](_))
-    Git2.repository_free[Unit](this)
+    /** TODO should we free odb? odb.foreach(Git2.odb_free[Void](_)) */
+    /** TODO This can crash: Git2.repository_free[Unit](this) */
   }
 
   override def equals(other: Any) = other match {

@@ -52,19 +52,11 @@ class Branch private[sgit] (ptr: Pointer) extends PointerType(ptr) with GitObjec
   }
 
   def rename(newName: String, force: Boolean = false) = move(newName, force)
-
-  def remoteName(repo: Repository): Try[String] = {
+  
+  def trackingName: Try[Option[String]] = {
     val buf = new Memory(1024)
-    Git2.branch_remote_name[Int](buf, 1024, repo, name) match {
-      case 0 => Success(buf.getString(0, false))
-      case x => Git2.exception(x)
-    }
-  }
-
-  def trackingName(repo: Repository): Try[String] = {
-    val buf = new Memory(1024)
-    Git2.branch_tracking_name[Int](buf, 1024, repo, name) match {
-      case 0 => Success(buf.getString(0, false))
+    Git2.branch_tracking_name[Int](buf, 1024, owner, canonicalName) match {
+      case x if x >= 0 => Success(Some(buf.getString(0, false)))
       case x => Git2.exception(x)
     }
   }

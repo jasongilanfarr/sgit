@@ -15,11 +15,11 @@ import com.sun.jna.ptr.PointerByReference
 class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with Freeable with Ordered[Reference] {
   def this() = this(Pointer.NULL)
 
-  def name(): String = {
+  def name: String = {
     Git2.reference_name[String](this)
   }
 
-  def normalizeName(): Try[String] = {
+  def normalizeName: Try[String] = {
     val buf = new Memory(1024)
     Git2.reference_normalize_name[Int](buf, buf.size, name, 0) match {
       case 0 => Success(buf.getString(0))
@@ -36,25 +36,25 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def hasLog(): Try[Boolean] = {
+  def hasLog: Try[Boolean] = {
     Git2.boolValue(Git2.reference_has_log[Int](this))
   }
 
-  def isBranch(): Try[Boolean] = {
+  def isBranch: Try[Boolean] = {
     Git2.boolValue(Git2.reference_is_branch[Int](this))
   }
 
-  def isRemote(): Try[Boolean] = {
+  def isRemote: Try[Boolean] = {
     Git2.boolValue(Git2.reference_is_remote[Int](this))
   }
 
-  def isSymbolic(): Boolean = {
+  def isSymbolic: Boolean = {
     Git2.reference_type[Int](this) == 2
   }
 
-  def isDirect() = !isSymbolic()
+  def isDirect = !isSymbolic
 
-  def owner(): Repository = {
+  def owner: Repository = {
     val ptr = Git2.reference_owner[Pointer](this)
     new Repository(ptr)
   }
@@ -67,7 +67,7 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def resolve(): Try[Reference] = {
+  def resolve: Try[Reference] = {
     val ptr = new PointerByReference
     Git2.reference_resolve[Int](ptr, this) match {
       case 0 => Success(new Reference(ptr.getValue))
@@ -75,7 +75,7 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def target(): Oid = {
+  def target: Oid = {
     new Oid(Git2.reference_target[OidT](this))
   }
 
@@ -87,7 +87,7 @@ class Reference private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def symbolicTarget(): Option[String] = {
+  def symbolicTarget: Option[String] = {
     Option(Git2.reference_symbolic_target[String](this))
   }
 

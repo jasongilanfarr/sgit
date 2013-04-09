@@ -34,7 +34,7 @@ class Config private[sgit] (ptr: Pointer) extends PointerType with Freeable with
     Git2.config_free[Unit](this)
   }
 
-  override def toString(): String = {
+  override def toString: String = {
     "Config"
   }
 }

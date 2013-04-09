@@ -13,27 +13,27 @@ import com.sun.jna.PointerType
 class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject with Freeable {
   def this() = this(Pointer.NULL)
 
-  def message(): String = {
+  def message: String = {
     Git2.commit_message[String](this)
   }
 
-  def messageEncoding(): String = {
+  def messageEncoding: String = {
     Git2.commit_message_encoding[String](this)
   }
 
-  def committer(): SignatureT = {
+  def committer: SignatureT = {
     Git2.commit_committer[SignatureT](this)
   }
 
-  def commitAuthor(): SignatureT = {
+  def commitAuthor: SignatureT = {
     Git2.commit_author[SignatureT](this)
   }
 
-  def epochTime(): TimeT = {
+  def epochTime: TimeT = {
     Git2.commit_time[TimeT](this)
   }
 
-  def tree(): Try[Tree] = {
+  def tree: Try[Tree] = {
     val ptrRef = new PointerByReference
     Git2.commit_tree[Int](ptrRef, this) match {
       case 0 => Success(new Tree(ptrRef.getValue))
@@ -41,12 +41,12 @@ class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitO
     }
   }
 
-  def treeId(): Oid = {
+  def treeId: Oid = {
     val oid = new OidT
     new Oid(Git2.commit_tree_id[OidT](this))
   }
 
-  def parents(): Seq[Commit] = {
+  def parents: Seq[Commit] = {
     val parentCount = Git2.commit_parent_count[Int](this)
     val seq = Buffer[Commit]()
     var i = 0

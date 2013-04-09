@@ -18,7 +18,7 @@ import scala.util.matching.Regex
 class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   def this() = this(Pointer.NULL)
 
-  def config(): Try[Config] = {
+  def config: Try[Config] = {
     val ptr = new PointerByReference
     Git2.repository_config[Int](ptr, this) match {
       case 0 => Success(Config(ptr.getValue))
@@ -30,7 +30,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.repository_set_config[Unit](this, config)
   }
 
-  def detachHead: Try[Unit] = {
+  def detachHead(): Try[Unit] = {
     Git2.unitValue(Git2.repository_detach_head[Int](this))
   }
 
@@ -38,19 +38,19 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.unitValue(Git2.repository_set_head_detached[Int](this, commitIsh))
   }
 
-  def isHeadDetached(): Try[Boolean] = {
+  def isHeadDetached: Try[Boolean] = {
     Git2.boolValue(Git2.repository_head_detached[Int](this))
   }
 
-  def isHeadOrphan(): Try[Boolean] = {
+  def isHeadOrphan: Try[Boolean] = {
     Git2.boolValue(Git2.repository_head_orphan[Int](this))
   }
 
-  def isBare(): Try[Boolean] = {
+  def isBare: Try[Boolean] = {
     Git2.boolValue(Git2.repository_is_bare[Int](this))
   }
 
-  def isEmpty(): Try[Boolean] = {
+  def isEmpty: Try[Boolean] = {
     Git2.boolValue(Git2.repository_is_empty[Int](this))
   }
 
@@ -58,11 +58,11 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.unitValue(Git2.repository_merge_cleanup[Int](this))
   }
 
-  def path(): String = {
+  def path: String = {
     Git2.repository_path[String](this)
   }
 
-  def workDir(): Option[String] = {
+  def workDir: Option[String] = {
     Option(Git2.repository_workdir[String](this))
   }
 
@@ -70,7 +70,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.unitValue(Git2.repository_set_workdir[Int](this, workDir, 1 /* Update_GitLink */ ))
   }
 
-  def head(): Try[Reference] = {
+  def head: Try[Reference] = {
     val refPtr = new PointerByReference
     Git2.repository_head[Int](refPtr, this) match {
       case 0 => Success(new Reference(refPtr.getValue))
@@ -82,7 +82,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Git2.unitValue(Git2.repository_set_head[Int](this, refName))
   }
 
-  def lastCommit(): Try[Commit] = {
+  def lastCommit: Try[Commit] = {
     head.flatMap(h => lookup[Commit](h.target))
   }
 
@@ -104,16 +104,20 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     }.filter(_.isSuccess).map(_.get)
   }
 
-  def refNames(): Traversable[String] = {
+  def refNames: Traversable[String] = {
     Reference.allNames(this)
   }
 
-  def refs(): Traversable[Reference] = {
+  def refs: Traversable[Reference] = {
     Reference.allNames(this).map(ref(_)).filter(_.isSuccess).map(_.get)
   }
 
-  def tagNames(): Seq[String] = {
+  def tagNames: Seq[String] = {
     Tag.allNames(this)
+  }
+
+  def tags: Seq[Tag] = {
+    Tag.all(this)
   }
 
   def blobAt(oid: Oid, path: String): Try[Blob] = {
@@ -125,7 +129,7 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     ) yield blob
   }
 
-  def index(): Try[Index] = {
+  def index: Try[Index] = {
     val indexPtr = new PointerByReference
     Git2.repository_index[Int](indexPtr, this) match {
       case 0 => Success(new Index(indexPtr.getValue))

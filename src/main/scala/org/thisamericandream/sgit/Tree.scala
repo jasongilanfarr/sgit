@@ -12,16 +12,16 @@ import com.sun.jna.PointerType
 class Tree private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject with Freeable {
   def this() = this(Pointer.NULL)
 
-  override def id(): Oid = {
+  override def id: Oid = {
     new Oid(Git2.tree_id[OidT](this))
   }
 
-  def entryCount(): Long = {
+  def entryCount: Long = {
     Git2.tree_entrycount[NativeLong](this).longValue
   }
 
-  def entries(): Seq[TreeEntry] = {
-    val count = entryCount()
+  def entries: Seq[TreeEntry] = {
+    val count = entryCount
     var i = 0
     val seq = Buffer[TreeEntry]()
     while (i < count) {

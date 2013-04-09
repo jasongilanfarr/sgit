@@ -13,11 +13,11 @@ import com.sun.jna.ptr.PointerByReference
 trait GitObject extends Freeable {
   self: PointerType =>
 
-  def id(): Oid = {
+  def id: Oid = {
     new Oid(Git2.object_id[OidT](getPointer))
   }
 
-  def owner(): Repository = {
+  def owner: Repository = {
     new Repository(Git2.object_owner[Pointer](getPointer))
   }
 
@@ -31,11 +31,11 @@ trait GitObject extends Freeable {
     }
   }
 
-  def `type`(): OType = {
+  def `type`: OType = {
     OType.forId(Git2.object_type[Int](getPointer))
   }
 
-  override def toString = id().toString
+  override def toString = id.toString
 
   override def equals(other: Any): Boolean = other match {
     case x: GitObject =>

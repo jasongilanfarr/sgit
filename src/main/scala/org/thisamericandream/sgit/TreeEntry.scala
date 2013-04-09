@@ -9,15 +9,15 @@ import com.sun.jna.PointerType
 class TreeEntry private[sgit] (val ptr: Pointer) extends PointerType(ptr) with Freeable {
   def this() = this(Pointer.NULL)
 
-  def name(): String = {
+  def name: String = {
     Git2.tree_entry_name[String](this)
   }
 
-  def id(): Oid = {
+  def id: Oid = {
     new Oid(Git2.tree_entry_id[OidT](this))
   }
 
-  def `type`(): OType = {
+  def `type`: OType = {
     OType.forId(Git2.tree_entry_type[Int](this))
   }
 
@@ -29,7 +29,7 @@ class TreeEntry private[sgit] (val ptr: Pointer) extends PointerType(ptr) with F
     }
   }
 
-  def fileMode(): FileMode = {
+  def fileMode: FileMode = {
     FileMode.forId(Git2.tree_entry_filemode[Int](this))
   }
 

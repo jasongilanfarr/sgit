@@ -9,21 +9,21 @@ import com.sun.jna.NativeLong
 class OdbObject private[sgit] (ptr: Pointer) extends PointerType with Freeable {
   def this() = this(Pointer.NULL)
 
-  def id(): Oid = {
+  def id: Oid = {
     new Oid(Git2.odb_object_id[OidT](ptr))
   }
 
-  def data(): Array[Byte] = {
+  def data: Array[Byte] = {
     val data = Git2.odb_object_data[Pointer](ptr)
 
-    data.getByteArray(0, len().toInt)
+    data.getByteArray(0, len.toInt)
   }
 
-  def len(): Long = {
+  def len: Long = {
     Git2.odb_object_size[NativeLong](ptr).longValue
   }
 
-  def `type`(): OType = {
+  def `type`: OType = {
     OType.forId(Git2.odb_object_type[Int](ptr))
   }
 

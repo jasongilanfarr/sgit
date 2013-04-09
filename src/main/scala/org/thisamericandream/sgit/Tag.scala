@@ -13,15 +13,15 @@ import com.sun.jna.ptr.PointerByReference
 class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObject {
   def this() = this(Pointer.NULL)
 
-  override def id(): Oid = {
+  override def id: Oid = {
     new Oid(Git2.tag_id[OidT](this))
   }
 
-  def message(): String = {
+  def message: String = {
     Git2.tag_message[String](this)
   }
 
-  def name(): String = {
+  def name: String = {
     Git2.tag_name[String](this)
   }
 
@@ -33,11 +33,11 @@ class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObje
     }
   }
 
-  def targetId(): Oid = {
+  def targetId: Oid = {
     new Oid(Git2.tag_target_id[OidT](this))
   }
 
-  def target(): Try[GitObject] = {
+  def target: Try[GitObject] = {
     val ptrRef = new PointerByReference
     Git2.tag_target[Int](ptrRef, this) match {
       case 0 =>
@@ -46,11 +46,11 @@ class Tag private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitObje
     }
   }
 
-  def targetType(): OType = {
+  def targetType: OType = {
     OType.forId(Git2.tag_target_type[Int](this))
   }
 
-  override def toString: String = name()
+  override def toString: String = name
 
   override def freeObject() {
     Git2.tag_free(this)

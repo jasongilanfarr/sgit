@@ -8,7 +8,7 @@ import com.sun.jna.Structure;
 public class SignatureT extends Structure {
   public String name;
   public String email;
-  public TimeT when;
+  public TimeT.ByValue when;
   
   @Override
   public List<String> getFieldOrder() {

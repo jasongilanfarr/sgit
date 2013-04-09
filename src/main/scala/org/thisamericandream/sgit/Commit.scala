@@ -25,7 +25,7 @@ class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitO
     Git2.commit_committer[SignatureT](this)
   }
 
-  def commitAuthor: SignatureT = {
+  def author: SignatureT = {
     Git2.commit_author[SignatureT](this)
   }
 
@@ -47,7 +47,7 @@ class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitO
   }
 
   def parents: Seq[Commit] = {
-    val parentCount = Git2.commit_parent_count[Int](this)
+    val parentCount = Git2.commit_parentcount[Int](this)
     val seq = Buffer[Commit]()
     var i = 0
     while (i < parentCount) {
@@ -62,12 +62,11 @@ class Commit private[sgit] (val ptr: Pointer) extends PointerType(ptr) with GitO
   }
 
   def parentIds: Seq[Oid] = {
-    val parentCount = Git2.commit_parent_count[Int](this)
+    val parentCount = Git2.commit_parentcount[Int](this)
     val seq = Buffer[Oid]()
     var i = 0
     while (i < parentCount) {
-      val ptrRef = new PointerByReference
-      new Oid(Git2.commit_parent_id[OidT](ptrRef, ptr, i))
+      seq += new Oid(Git2.commit_parent_id[OidT](this, i))
       i += 1
     }
     seq.toSeq

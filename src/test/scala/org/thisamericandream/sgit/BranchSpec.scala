@@ -24,7 +24,7 @@ class BranchSpec extends WordSpec with ShouldMatchers with TestRepository {
       Branch.lookup(repo, "master").get.trackingName.get should equal(Some("refs/remotes/origin/master"))
     }
     "have a tracking branch" in {
-      Branch.lookup(repo, "master").get.tracking.get should be ('defined)
+      Branch.lookup(repo, "master").get.tracking.get should be('defined)
     }
     "lookup local branch" in {
       val branch = Branch.lookup(repo, "master").get
@@ -49,8 +49,8 @@ class BranchSpec extends WordSpec with ShouldMatchers with TestRepository {
     "be renameable" in {
       val newBranch = Branch.create(repo, "newBranch3", repo.lookup[Commit]("536c169501d92f7abc1ebbad1b79ba63a2e40e67").get).get
       newBranch.rename("newBranch-renamed")
-      Branch.lookup(repo, "newBranch3") should be ('failure)
-      Branch.lookup(repo, "newBranch-renamed") should be ('success)
+      Branch.lookup(repo, "newBranch3") should be('failure)
+      Branch.lookup(repo, "newBranch-renamed") should be('success)
     }
   }
 }

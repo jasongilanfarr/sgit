@@ -159,6 +159,10 @@ object Reference {
     seq.toSeq
   }
 
+  def all(repo: Repository): Seq[Reference] = {
+    allNames(repo).map(lookup(repo, _)).filter(_.isSuccess).map(_.get)
+  }
+
   def fromName(repo: Repository, name: String): Try[Oid] = {
     val oid = new OidT
     Git2.reference_name_to_id[Int](oid, repo, name) match {

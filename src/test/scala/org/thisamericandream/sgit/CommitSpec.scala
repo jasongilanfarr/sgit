@@ -15,14 +15,14 @@ class CommitSpec extends WordSpec with ShouldMatchers with TestRepository {
       val c = commit.committer
       c.name should equal("Jason Gilanfarr")
       c.email should equal("jason.gilanfarr@gmail.com")
-      
+
       val a = commit.author
       a.name should equal("Jason Gilanfarr")
       a.email should equal("jason.gilanfarr@gmail.com")
-      
+
       commit.tree.get.id should equal("207ef088ee067e000e6e0047bce198411b804f41")
-      commit.parentIds should equal (Seq("a569a912e0d165942e4bcf7f08331f0f9fbd8e00"))
-      commit.parents.map(_.id) should equal (Seq("a569a912e0d165942e4bcf7f08331f0f9fbd8e00"))
+      commit.parentIds should equal(Seq("a569a912e0d165942e4bcf7f08331f0f9fbd8e00"))
+      commit.parents.map(_.id) should equal(Seq("a569a912e0d165942e4bcf7f08331f0f9fbd8e00"))
     }
   }
 

@@ -14,6 +14,7 @@ import com.sun.jna.Callback
 import scala.util.Failure
 import com.sun.jna.ptr.NativeLongByReference
 import scala.util.matching.Regex
+import java.util.EnumSet
 
 class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   def this() = this(Pointer.NULL)
@@ -98,17 +99,17 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     Reference.lookup(this, refName)
   }
 
-  def refs(pattern: Regex): Traversable[Reference] = {
+  def refs(pattern: Regex): Seq[Reference] = {
     Reference.allNames(this).filter(pattern.findFirstIn(_).isDefined).map { name =>
       ref(name)
     }.filter(_.isSuccess).map(_.get)
   }
 
-  def refNames: Traversable[String] = {
+  def refNames: Seq[String] = {
     Reference.allNames(this)
   }
 
-  def refs: Traversable[Reference] = {
+  def refs: Seq[Reference] = {
     Reference.allNames(this).map(ref(_)).filter(_.isSuccess).map(_.get)
   }
 
@@ -118,6 +119,22 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
 
   def tags: Seq[Tag] = {
     Tag.all(this)
+  }
+
+  def branches: Seq[Branch] = {
+    Branch.all(this)
+  }
+
+  def branch(name: String): Try[Branch] = {
+    Branch.lookup(this, name)
+  }
+
+  def branchNames: Seq[String] = {
+    Branch.allNames(this)
+  }
+
+  def createBranch(name: String, commit: Commit): Try[Branch] = {
+    Branch.create(this, name, commit)
   }
 
   def blobAt(oid: Oid, path: String): Try[Blob] = {
@@ -258,6 +275,14 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
     }
   }
 
+  def walk(from: Commit, sorting: EnumSet[SortMode] = EnumSet.of(SortMode.Time), f: Commit => Unit) {
+    RevWalk(this).foreach { walker =>
+      walker.sorting(sorting)
+      walker.push(from)
+      walker.foreach(f)
+    }
+  }
+
   lazy val odb: Try[Pointer] = {
     val odbPtr = new PointerByReference
     Git2.repository_odb[Int](odbPtr, this) match {
@@ -267,8 +292,8 @@ class Repository(val ptr: Pointer) extends PointerType(ptr) with Freeable {
   }
 
   protected override def freeObject() {
-    /** TODO should we free odb? odb.foreach(Git2.odb_free[Void](_)) */
-    /** TODO This can crash: Git2.repository_free[Unit](this) */
+    odb.foreach(Git2.odb_free[Void](_))
+    Git2.repository_free[Unit](this)
   }
 
   override def equals(other: Any) = other match {
